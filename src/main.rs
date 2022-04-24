@@ -1,45 +1,118 @@
-use clap::{Parser, Subcommand};
-use std::path::PathBuf;
+use clap::{Args, Parser, Subcommand};
+use figment::{
+    providers::{Format, Yaml},
+    Figment,
+};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::Path;
+extern crate dirs;
 
 mod todoist;
 
+#[derive(Serialize, Deserialize)]
+struct Config {
+    api_key: String,
+}
+
+fn setup_config() -> Result<Config, Box<dyn std::error::Error>> {
+    let home = dirs::home_dir().expect("failed to get home directory");
+    let config_dir = Path::new(&home).join(".config/todoist");
+    if !config_dir.is_dir() {
+        fs::create_dir(config_dir.to_owned()).expect("failed to create config directory");
+    }
+    Ok(Figment::new()
+        .merge(Yaml::file(config_dir.join("config.yaml")))
+        .extract()?)
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = todoist::Client{http_client: reqwest::Client::new()};
+    let config = setup_config()?;
 
-    let tasks = client.find().await.unwrap();
+    let cli = Cli::parse();
+    let client = todoist::Client::new(reqwest::Client::new(), config.api_key);
 
-    for task in tasks.iter() {
-        println!("{} | {} ", task.id, task.content)
+    match &cli.command {
+        Commands::Tasks(tasks) => match &tasks.command {
+            StashCommands::List { filter } => {
+                match client
+                    .find(Some(todoist::TaskFilter {
+                        day_filter: filter.to_owned().unwrap_or(String::from("(today|overdue)")),
+                    }))
+                    .await
+                {
+                    Ok(resp) => {
+                        for task in resp.iter() {
+                            println!("{} | {}", task.id.unwrap(), task.content)
+                        }
+                    }
+                    Err(e) => {
+                        println!("{}", e);
+                    }
+                }
+            }
+            StashCommands::Create { content, due } => {
+                match client
+                    .create(todoist::Task::new(content.to_owned(), due.to_owned()))
+                    .await
+                {
+                    Ok(task) => {
+                        println!("{}", task.content)
+                    }
+                    Err(e) => {
+                        println!("{}", e);
+                    }
+                }
+            }
+            StashCommands::Done { id } => match client.close(*id).await {
+                Ok(_) => println!("task done"),
+                Err(e) => {
+                    println!("{}", e);
+                }
+            },
+        },
     }
 
     Ok(())
 }
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 enum Commands {
-    /// does testing things
-    Test {
-        /// lists test values
-        #[clap(short, long)]
-        list: bool,
+    /// Work with tasks
+    Tasks(Tasks),
+}
+
+#[derive(Debug, Args)]
+struct Tasks {
+    #[clap(subcommand)]
+    command: StashCommands,
+}
+
+#[derive(Debug, Subcommand)]
+enum StashCommands {
+    // List commands, default to today and overdue
+    List {
+        #[clap(long, short)]
+        filter: Option<String>,
+    },
+    // Create a task
+    Create {
+        // Content of the task
+        content: String,
+        // Tasks due date
+        due: String,
+    },
+    // Mark task as done
+    Done {
+        // ID of the task
+        id: i64,
     },
 }
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Cli {
-    /// Optional name to operate on
-    name: Option<String>,
-
-    /// Sets a custom config file
-    #[clap(short, long, parse(from_os_str), value_name = "FILE")]
-    config: Option<PathBuf>,
-
-    /// Turn debugging information on
-    #[clap(short, long, parse(from_occurrences))]
-    debug: usize,
-
     #[clap(subcommand)]
-    command: Option<Commands>,
+    command: Commands,
 }
