@@ -1,7 +1,6 @@
 use core::fmt;
 use std::error::Error;
 use std::ops::Add;
-
 use serde::{Deserialize, Serialize};
 
 pub struct Client {

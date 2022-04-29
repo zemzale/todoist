@@ -6,9 +6,10 @@ use figment::{
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
+use todoist;
+
 extern crate dirs;
 
-mod todoist;
 
 #[derive(Serialize, Deserialize)]
 struct Config {
