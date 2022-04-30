@@ -6,7 +6,8 @@ use figment::{
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-use todoist;
+use todoist::{self, survey::Question};
+use todoist::survey;
 
 extern crate dirs;
 
@@ -54,8 +55,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
             StashCommands::Create { content, due } => {
-                match client
-                    .create(todoist::Task::new(content.to_owned(), due.to_owned()))
+                let task_content: String;
+                let task_due: String;
+
+                if content.is_none() {
+                    task_content = survey::ask(Question::new(String::from("Your tasks name")));
+                } else {
+                    task_content = content.to_owned().unwrap();
+                }
+
+                if due.is_none() {
+                    task_due = survey::ask(Question::new(String::from("Due date")));
+                } else {
+                    task_due = due.to_owned().unwrap();
+                }
+
+                match client    
+                    .create(todoist::Task::new(task_content.to_owned(), task_due.to_owned()))
                     .await
                 {
                     Ok(task) => {
@@ -100,9 +116,9 @@ enum StashCommands {
     // Create a task
     Create {
         // Content of the task
-        content: String,
+        content: Option<String>,
         // Tasks due date
-        due: String,
+        due: Option<String>,
     },
     // Mark task as done
     Done {
