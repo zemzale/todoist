@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match &cli.command {
         Commands::Tasks(tasks) => match &tasks.command {
-            StashCommands::List { filter } => {
+            TaskCommands::List { filter } => {
                 match client
                     .find(Some(todoist::TaskFilter {
                         day_filter: filter.to_owned().unwrap_or(String::from("(today|overdue)")),
@@ -54,7 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
             }
-            StashCommands::Create { content, due } => {
+            TaskCommands::Create { content, due } => {
                 let task_content: String;
                 let task_due: String;
 
@@ -82,7 +82,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
             }
-            StashCommands::Done { id } => match client.close(*id).await {
+            TaskCommands::Done { id } => match client.close(*id).await {
                 Ok(_) => println!("task done"),
                 Err(e) => {
                     println!("{}", e);
@@ -103,11 +103,11 @@ enum Commands {
 #[derive(Debug, Args)]
 struct Tasks {
     #[clap(subcommand)]
-    command: StashCommands,
+    command: TaskCommands,
 }
 
 #[derive(Debug, Subcommand)]
-enum StashCommands {
+enum TaskCommands {
     // List commands, default to today and overdue
     List {
         #[clap(long, short)]
