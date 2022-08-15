@@ -16,4 +16,4 @@ dirs = "4.0"
 
 [[bin]]
 name = "todoist"
-path = "src/bin/main.rs"
+path = "src/main.rs"

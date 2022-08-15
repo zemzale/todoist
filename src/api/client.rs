@@ -1,6 +1,6 @@
 use std::ops::Add;
 use std::error::Error;
-use crate::{Task, TaskFilter, RequestFailed};
+use crate::api::{Task, TaskFilter, RequestFailed};
 
 pub struct Client {
     pub http_client: reqwest::Client,

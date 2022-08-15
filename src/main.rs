@@ -1,3 +1,6 @@
+mod survey;
+mod api;
+
 use clap::{Args, Parser, Subcommand};
 use figment::{
     providers::{Format, Yaml},
@@ -6,8 +9,7 @@ use figment::{
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-use todoist::{self, survey::Question};
-use todoist::survey;
+use crate::survey::Question;
 
 extern crate dirs;
 
@@ -19,7 +21,7 @@ struct Config {
 
 fn setup_config() -> Result<Config, Box<dyn std::error::Error>> {
     let home = dirs::home_dir().expect("failed to get home directory");
-    let config_dir = Path::new(&home).join(".config/todoist");
+    let config_dir = Path::new(&home).join(".config/api");
     if !config_dir.is_dir() {
         fs::create_dir(config_dir.to_owned()).expect("failed to create config directory");
     }
@@ -33,13 +35,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = setup_config()?;
 
     let cli = Cli::parse();
-    let client = todoist::Client::new(reqwest::Client::new(), config.api_key);
+    let client = api::Client::new(reqwest::Client::new(), config.api_key);
 
     match &cli.command {
         Commands::Tasks(tasks) => match &tasks.command {
             TaskCommands::List { filter } => {
                 match client
-                    .find(Some(todoist::TaskFilter {
+                    .find(Some(api::TaskFilter {
                         day_filter: filter.to_owned().unwrap_or(String::from("(today|overdue)")),
                     }))
                     .await
@@ -71,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
 
                 match client    
-                    .create(todoist::Task::new(task_content.to_owned(), task_due.to_owned()))
+                    .create(api::Task::new(task_content.to_owned(), task_due.to_owned()))
                     .await
                 {
                     Ok(task) => {
