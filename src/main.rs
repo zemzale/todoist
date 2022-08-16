@@ -1,42 +1,19 @@
 mod survey;
 mod api;
+mod config;
 
 use clap::{Args, Parser, Subcommand};
-use figment::{
-    providers::{Format, Yaml},
-    Figment,
-};
-use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::Path;
 use crate::survey::Question;
+use crate::config::setup_config;
 
 extern crate dirs;
-
-
-#[derive(Serialize, Deserialize)]
-struct Config {
-    api_key: String,
-}
-
-fn setup_config() -> Result<Config, Box<dyn std::error::Error>> {
-    let home = dirs::home_dir().expect("failed to get home directory");
-    let config_dir = Path::new(&home).join(".config/api");
-    if !config_dir.is_dir() {
-        fs::create_dir(config_dir.to_owned()).expect("failed to create config directory");
-    }
-    Ok(Figment::new()
-        .merge(Yaml::file(config_dir.join("config.yaml")))
-        .extract()?)
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = setup_config()?;
-
-    let cli = Cli::parse();
     let client = api::Client::new(reqwest::Client::new(), config.api_key);
 
+    let cli = Cli::parse();
     match &cli.command {
         Commands::Tasks(tasks) => match &tasks.command {
             TaskCommands::List { filter } => {
