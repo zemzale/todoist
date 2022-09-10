@@ -1,6 +1,6 @@
-use std::ops::Add;
+use crate::api::{RequestFailed, Task, TaskFilter};
 use std::error::Error;
-use crate::api::{Task, TaskFilter, RequestFailed};
+use std::ops::Add;
 
 pub struct Client {
     pub http_client: reqwest::Client,
@@ -78,5 +78,22 @@ impl Client {
             }
             Err(e) => Err(Box::new(e)),
         }
+    }
+
+    pub async fn view(self, id: i64) -> Result<Task, Box<dyn Error>> {
+        let path: String = "https://api.todoist.com/rest/v1/tasks/"
+            .to_string()
+            .add(&id.to_string());
+
+        let resp = self
+            .http_client
+            .get(path)
+            .header(self.bearer_token.0, self.bearer_token.1)
+            .send()
+            .await?
+            .json::<Task>()
+            .await?;
+
+        return Ok(resp);
     }
 }

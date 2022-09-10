@@ -1,5 +1,5 @@
-use std::ops::Add;
 use serde::{Deserialize, Serialize};
+use std::ops::Add;
 
 #[derive(Deserialize, Serialize)]
 pub struct Task {
