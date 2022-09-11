@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 {
                     Ok(resp) => {
                         for task in resp.iter() {
-                            println!("{} | {}", task.id.unwrap_or(0), task.content)
+                            println!("{} | {}", task.id, task.content)
                         }
                     }
                     Err(e) => {
@@ -65,16 +65,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
             }
-            TaskCommands::Done { id } => match client.close(*id).await {
+            TaskCommands::Done { id } => match client.close(id.to_string()).await {
                 Ok(_) => println!("task done"),
                 Err(e) => {
                     println!("{}", e);
                 }
             },
-            TaskCommands::View { id } => match client.view(*id).await {
+            TaskCommands::View { id } => match client.view(id.to_string()).await {
                 Ok(task) => {
                     println!("{}", task.content);
-                    println!("{}", task.id.unwrap_or(0));
+                    println!("{}", task.id);
                 }
                 Err(e) => println!("Failed to view the task: {}", e),
             },
@@ -113,11 +113,11 @@ enum TaskCommands {
     // Mark task as done
     Done {
         // ID of the task
-        id: i64,
+        id: String,
     },
     // View task by id
     View {
-        id: i64,
+        id: String,
     },
 }
 

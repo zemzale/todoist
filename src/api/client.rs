@@ -19,7 +19,7 @@ impl Client {
     }
 
     pub async fn find(self, filter: Option<TaskFilter>) -> Result<Vec<Task>, reqwest::Error> {
-        let mut path: String = "https://api.todoist.com/rest/v1/tasks".to_string();
+        let mut path: String = "https://api.todoist.com/rest/v2/tasks".to_string();
 
         match filter {
             Some(f) => {
@@ -41,7 +41,7 @@ impl Client {
     }
 
     pub async fn create(self, task: TaskCreate) -> Result<Task, reqwest::Error> {
-        let path = "https://api.todoist.com/rest/v1/tasks";
+        let path = "https://api.todoist.com/rest/v2/tasks";
 
         let resp = self
             .http_client
@@ -56,10 +56,10 @@ impl Client {
         return Ok(resp);
     }
 
-    pub async fn close(self, id: i64) -> Result<(), Box<dyn Error>> {
-        let path = "https://api.todoist.com/rest/v1/tasks/"
+    pub async fn close(self, id: String) -> Result<(), Box<dyn Error>> {
+        let path = "https://api.todoist.com/rest/v2/tasks/"
             .to_string()
-            .add(&id.to_string())
+            .add(&id)
             .add("/close");
 
         let resp = self
@@ -80,10 +80,10 @@ impl Client {
         }
     }
 
-    pub async fn view(self, id: i64) -> Result<Task, Box<dyn Error>> {
-        let path: String = "https://api.todoist.com/rest/v1/tasks/"
+    pub async fn view(self, id: String) -> Result<Task, Box<dyn Error>> {
+        let path: String = "https://api.todoist.com/rest/v2/tasks/"
             .to_string()
-            .add(&id.to_string());
+            .add(&id);
 
         let resp = self
             .http_client
