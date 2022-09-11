@@ -1,10 +1,10 @@
-mod survey;
 mod api;
 mod config;
+mod survey;
 
-use clap::{Args, Parser, Subcommand};
-use crate::survey::Question;
 use crate::config::setup_config;
+use crate::survey::Question;
+use clap::{Args, Parser, Subcommand};
 
 extern crate dirs;
 
@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 {
                     Ok(resp) => {
                         for task in resp.iter() {
-                            println!("{} | {}", task.id.unwrap(), task.content)
+                            println!("{} | {}", task.id.unwrap_or(0), task.content)
                         }
                     }
                     Err(e) => {
@@ -49,8 +49,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     task_due = due.to_owned().unwrap();
                 }
 
-                match client    
-                    .create(api::Task::new(task_content.to_owned(), task_due.to_owned()))
+                match client
+                    .create(api::TaskCreate::new(
+                        task_content.to_owned(),
+                        task_due.to_owned(),
+                        Some(0),
+                    ))
                     .await
                 {
                     Ok(task) => {
@@ -66,6 +70,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Err(e) => {
                     println!("{}", e);
                 }
+            },
+            TaskCommands::View { id } => match client.view(*id).await {
+                Ok(task) => {
+                    println!("{}", task.content);
+                    println!("{}", task.id.unwrap_or(0));
+                }
+                Err(e) => println!("Failed to view the task: {}", e),
             },
         },
     }
@@ -102,6 +113,10 @@ enum TaskCommands {
     // Mark task as done
     Done {
         // ID of the task
+        id: i64,
+    },
+    // View task by id
+    View {
         id: i64,
     },
 }

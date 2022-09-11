@@ -1,4 +1,4 @@
-use crate::api::{RequestFailed, Task, TaskFilter};
+use crate::api::{RequestFailed, Task, TaskCreate, TaskFilter};
 use std::error::Error;
 use std::ops::Add;
 
@@ -40,7 +40,7 @@ impl Client {
         return Ok(resp);
     }
 
-    pub async fn create(self, task: Task) -> Result<Task, reqwest::Error> {
+    pub async fn create(self, task: TaskCreate) -> Result<Task, reqwest::Error> {
         let path = "https://api.todoist.com/rest/v1/tasks";
 
         let resp = self
