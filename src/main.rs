@@ -74,9 +74,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
             TaskCommands::View { id } => match client.view(id.to_string()).await {
                 Ok(task) => {
+                    let project = client.project_view(task.project_id).await.unwrap();
+
                     println!("Task : {}", Paint::green(task.content));
                     println!("Due date : {}", Paint::red(task.due.date));
                     println!("Priority : {}", Paint::green(task.priority));
+                    println!("Project : {}", Paint::green(project.name));
                     print!("Labels : ");
                     for lable in task.labels {
                         print!("{} ", Paint::magenta(lable))

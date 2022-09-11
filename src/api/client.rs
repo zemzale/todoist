@@ -1,4 +1,4 @@
-use crate::api::{RequestFailed, Task, TaskCreate, TaskFilter};
+use crate::api::{Project, RequestFailed, Task, TaskCreate, TaskFilter};
 use std::error::Error;
 use std::ops::Add;
 
@@ -80,7 +80,7 @@ impl Client {
         }
     }
 
-    pub async fn view(self, id: String) -> Result<Task, Box<dyn Error>> {
+    pub async fn view(&self, id: String) -> Result<Task, Box<dyn Error>> {
         let path: String = "https://api.todoist.com/rest/v2/tasks/"
             .to_string()
             .add(&id);
@@ -88,10 +88,33 @@ impl Client {
         let resp = self
             .http_client
             .get(path)
-            .header(self.bearer_token.0, self.bearer_token.1)
+            .header(
+                self.bearer_token.0.to_owned(),
+                self.bearer_token.1.to_owned(),
+            )
             .send()
             .await?
             .json::<Task>()
+            .await?;
+
+        return Ok(resp);
+    }
+
+    pub async fn project_view(&self, id: String) -> Result<Project, Box<dyn Error>> {
+        let path: String = "https://api.todoist.com/rest/v2/projects/"
+            .to_string()
+            .add(&id);
+
+        let resp = self
+            .http_client
+            .get(path)
+            .header(
+                self.bearer_token.0.to_owned(),
+                self.bearer_token.1.to_owned(),
+            )
+            .send()
+            .await?
+            .json::<Project>()
             .await?;
 
         return Ok(resp);
