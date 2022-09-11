@@ -5,6 +5,7 @@ mod survey;
 use crate::config::setup_config;
 use crate::survey::Question;
 use clap::{Args, Parser, Subcommand};
+use yansi::Paint;
 
 extern crate dirs;
 
@@ -73,8 +74,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
             TaskCommands::View { id } => match client.view(id.to_string()).await {
                 Ok(task) => {
-                    println!("{}", task.content);
-                    println!("{}", task.id);
+                    println!("Task : {}", Paint::green(task.content));
+                    println!("Due date : {}", Paint::red(task.due.date));
+                    println!("Priority : {}", Paint::green(task.priority));
+                    print!("Labels : ");
+                    for lable in task.labels {
+                        print!("{} ", Paint::magenta(lable))
+                    }
+                    println!();
                 }
                 Err(e) => println!("Failed to view the task: {}", e),
             },
