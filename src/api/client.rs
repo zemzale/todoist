@@ -1,3 +1,6 @@
+use serde::de::DeserializeOwned;
+use serde::Serialize;
+
 use crate::api::{Project, RequestFailed, Task, TaskCreate, TaskFilter};
 use std::error::Error;
 use std::ops::Add;
@@ -18,9 +21,8 @@ impl Client {
         };
     }
 
-    pub async fn find(self, filter: Option<TaskFilter>) -> Result<Vec<Task>, reqwest::Error> {
+    pub async fn find(self, filter: Option<TaskFilter>) -> Result<Vec<Task>, Box<dyn Error>> {
         let mut path: String = "https://api.todoist.com/rest/v2/tasks".to_string();
-
         match filter {
             Some(f) => {
                 path = path.add(&f.to_string());
@@ -28,32 +30,13 @@ impl Client {
             None => (),
         }
 
-        let resp = self
-            .http_client
-            .get(path)
-            .header(self.bearer_token.0, self.bearer_token.1)
-            .send()
-            .await?
-            .json::<Vec<Task>>()
-            .await?;
-
-        return Ok(resp);
+        return self.get::<Vec<Task>>(path).await;
     }
 
-    pub async fn create(self, task: TaskCreate) -> Result<Task, reqwest::Error> {
-        let path = "https://api.todoist.com/rest/v2/tasks";
-
-        let resp = self
-            .http_client
-            .post(path)
-            .header(self.bearer_token.0, self.bearer_token.1)
-            .json(&task)
-            .send()
-            .await?
-            .json::<Task>()
-            .await?;
-
-        return Ok(resp);
+    pub async fn create(self, task: TaskCreate) -> Result<Task, Box<dyn Error>> {
+        return self
+            .post::<TaskCreate, Task>(Some(task), String::from("/tasks"))
+            .await;
     }
 
     pub async fn close(self, id: String) -> Result<(), Box<dyn Error>> {
@@ -81,29 +64,17 @@ impl Client {
     }
 
     pub async fn view(&self, id: String) -> Result<Task, Box<dyn Error>> {
-        let path: String = "https://api.todoist.com/rest/v2/tasks/"
-            .to_string()
-            .add(&id);
-
-        let resp = self
-            .http_client
-            .get(path)
-            .header(
-                self.bearer_token.0.to_owned(),
-                self.bearer_token.1.to_owned(),
-            )
-            .send()
-            .await?
-            .json::<Task>()
-            .await?;
-
-        return Ok(resp);
+        let path: String = "/tasks/".to_string().add(&id);
+        return self.get::<Task>(path).await;
     }
 
     pub async fn project_view(&self, id: String) -> Result<Project, Box<dyn Error>> {
-        let path: String = "https://api.todoist.com/rest/v2/projects/"
-            .to_string()
-            .add(&id);
+        let path: String = "/projects/".to_string().add(&id);
+        return self.get::<Project>(path).await;
+    }
+
+    async fn get<T: DeserializeOwned>(&self, sub_path: String) -> Result<T, Box<dyn Error>> {
+        let path: String = "https://api.todoist.com/rest/v2".to_string().add(&sub_path);
 
         let resp = self
             .http_client
@@ -114,9 +85,29 @@ impl Client {
             )
             .send()
             .await?
-            .json::<Project>()
+            .json::<T>()
             .await?;
 
-        return Ok(resp);
+        Ok(resp)
+    }
+
+    async fn post<B, T>(&self, body: Option<B>, sub_path: String) -> Result<T, Box<dyn Error>>
+    where
+        B: Serialize,
+        T: DeserializeOwned,
+    {
+        let path: String = "https://api.todoist.com/rest/v2".to_string().add(&sub_path);
+
+        let mut request = self.http_client.post(path).header(
+            self.bearer_token.0.to_owned(),
+            self.bearer_token.1.to_owned(),
+        );
+
+        if body.is_some() {
+            request = request.json(&body)
+        }
+
+        let resp = request.send().await?.json::<T>().await?;
+        Ok(resp)
     }
 }
