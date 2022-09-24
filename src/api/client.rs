@@ -73,6 +73,11 @@ impl Client {
         return self.get::<Project>(path).await;
     }
 
+    pub async fn project_list(&self) -> Result<Vec<Project>, Box<dyn Error>> {
+        let path: String = "/projects".to_string();
+        return self.get::<Vec<Project>>(path).await;
+    }
+
     async fn get<T: DeserializeOwned>(&self, sub_path: String) -> Result<T, Box<dyn Error>> {
         let path: String = "https://api.todoist.com/rest/v2".to_string().add(&sub_path);
 

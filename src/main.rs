@@ -5,6 +5,7 @@ mod survey;
 use crate::config::setup_config;
 use crate::survey::Question;
 use clap::{Args, Parser, Subcommand};
+use dialoguer::theme::ColorfulTheme;
 use yansi::Paint;
 
 extern crate dirs;
@@ -34,9 +35,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
             }
-            TaskCommands::Create { content, due } => {
+            TaskCommands::Create {
+                content,
+                due,
+                project,
+            } => {
                 let task_content: String;
                 let task_due: String;
+                let mut project_id: Option<String> = None;
+
+                if project.is_none() {
+                    let selections = client
+                        .project_list()
+                        .await
+                        .expect("failed to fetch projects");
+
+                    let selected_project =
+                        dialoguer::FuzzySelect::with_theme(&ColorfulTheme::default())
+                            .with_prompt("Project:")
+                            .items(&selections)
+                            .default(0)
+                            .interact()
+                            .unwrap();
+
+                    project_id = Some(selections.get(selected_project).unwrap().id.to_owned())
+                }
 
                 if content.is_none() {
                     task_content = survey::ask(Question::new(String::from("Your tasks name")));
@@ -54,7 +77,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .create(api::TaskCreate::new(
                         task_content.to_owned(),
                         task_due.to_owned(),
-                        Some(0),
+                        Some(1),
+                        project_id,
                     ))
                     .await
                 {
@@ -119,6 +143,8 @@ enum TaskCommands {
         content: Option<String>,
         // Tasks due date
         due: Option<String>,
+        // Tasks project
+        project: Option<String>,
     },
     // Mark task as done
     Done {
