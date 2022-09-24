@@ -39,13 +39,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 due,
                 project,
             } => {
+                let prompt = |prompt: &str| -> String {
+                    dialoguer::Input::with_theme(&theme)
+                        .with_prompt(prompt)
+                        .interact()
+                        .expect("failed to get input from promt")
+                };
+
                 let task_create = api::TaskCreate::new(if let Some(x) = content {
                     x.to_owned()
                 } else {
-                    dialoguer::Input::with_theme(&theme)
-                        .with_prompt("Your tasks name")
-                        .interact()
-                        .expect("failed to get task name from prompt")
+                    prompt("Your tasks name")
                 })
                 .project(if let Some(x) = project {
                     x.to_owned()
@@ -67,10 +71,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .due(if let Some(x) = due {
                     x.to_owned()
                 } else {
-                    dialoguer::Input::with_theme(&theme)
-                        .with_prompt("Due date")
-                        .interact()
-                        .unwrap()
+                    prompt("Due date")
                 })
                 .to_owned();
 
