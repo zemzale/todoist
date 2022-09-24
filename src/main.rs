@@ -1,9 +1,7 @@
 mod api;
 mod config;
-mod survey;
 
 use crate::config::setup_config;
-use crate::survey::Question;
 use clap::{Args, Parser, Subcommand};
 use dialoguer::theme::ColorfulTheme;
 use yansi::Paint;
@@ -16,6 +14,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = api::Client::new(reqwest::Client::new(), config.api_key);
 
     let cli = Cli::parse();
+    let theme = ColorfulTheme::default();
     match &cli.command {
         Commands::Tasks(tasks) => match &tasks.command {
             TaskCommands::List { filter } => {
@@ -50,25 +49,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .await
                         .expect("failed to fetch projects");
 
-                    let selected_project =
-                        dialoguer::FuzzySelect::with_theme(&ColorfulTheme::default())
-                            .with_prompt("Project:")
-                            .items(&selections)
-                            .default(0)
-                            .interact()
-                            .unwrap();
+                    let selected_project = dialoguer::FuzzySelect::with_theme(&theme)
+                        .with_prompt("Project:")
+                        .items(&selections)
+                        .default(0)
+                        .interact()
+                        .unwrap();
 
                     project_id = Some(selections.get(selected_project).unwrap().id.to_owned())
                 }
 
                 if content.is_none() {
-                    task_content = survey::ask(Question::new(String::from("Your tasks name")));
+                    task_content = dialoguer::Input::with_theme(&theme)
+                        .with_prompt("Your tasks name")
+                        .interact()
+                        .unwrap();
                 } else {
                     task_content = content.to_owned().unwrap();
                 }
 
                 if due.is_none() {
-                    task_due = survey::ask(Question::new(String::from("Due date")));
+                    task_due = dialoguer::Input::with_theme(&theme)
+                        .with_prompt("Due date")
+                        .interact()
+                        .unwrap();
                 } else {
                     task_due = due.to_owned().unwrap();
                 }
