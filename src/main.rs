@@ -107,6 +107,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Err(e) => println!("Failed to view the task: {}", e),
             },
         },
+        Commands::Projects(cmd) => match &cmd.command {
+            ProjectCommands::List {} => match client.project_list().await {
+                Ok(projects) => {
+                    for project in projects.iter() {
+                        println!("{} | {}", project.id, project.name)
+                    }
+                }
+                Err(e) => {
+                    println!("{}", e);
+                }
+            },
+        },
     }
 
     Ok(())
@@ -116,6 +128,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 enum Commands {
     /// Work with tasks
     Tasks(Tasks),
+    // Work with projects
+    Projects(Projects),
 }
 
 #[derive(Debug, Args)]
@@ -149,6 +163,18 @@ enum TaskCommands {
     View {
         id: String,
     },
+}
+
+#[derive(Debug, Args)]
+struct Projects {
+    #[clap(subcommand)]
+    command: ProjectCommands,
+}
+
+#[derive(Debug, Subcommand)]
+enum ProjectCommands {
+    // List command
+    List {},
 }
 
 #[derive(Parser, Debug)]
