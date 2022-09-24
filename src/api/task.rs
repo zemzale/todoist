@@ -61,25 +61,36 @@ pub struct TaskCreate {
     pub content: String,
     #[serde(rename = "due_string")]
     pub due_string: Option<String>,
-    pub priority: Option<i64>,
+    pub priority: Option<i32>,
     pub project_id: Option<String>,
 }
 
 impl TaskCreate {
-    pub fn new(
-        content: String,
-        due: String,
-        priority: Option<i64>,
-        project_id: Option<String>,
-    ) -> TaskCreate {
+    pub fn new(content: String) -> TaskCreate {
         return TaskCreate {
             content,
-            due_string: Some(due),
-            priority,
-            project_id,
+            due_string: None,
+            priority: None,
+            project_id: None,
         };
     }
+
+    pub fn due<'a>(&'a mut self, date: String) -> &'a mut TaskCreate {
+        self.due_string = Some(date);
+        self
+    }
+
+    pub fn priority<'a>(&'a mut self, priority: i32) -> &'a mut TaskCreate {
+        self.priority = Some(priority);
+        self
+    }
+
+    pub fn project<'a>(&'a mut self, id: String) -> &'a mut TaskCreate {
+        self.project_id = Some(id);
+        self
+    }
 }
+
 impl Task {
     pub fn new(content: String) -> Task {
         return Task {

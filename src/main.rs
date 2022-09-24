@@ -39,11 +39,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 due,
                 project,
             } => {
-                let task_content: String;
-                let task_due: String;
-                let mut project_id: Option<String> = None;
-
-                if project.is_none() {
+                let task_create = api::TaskCreate::new(if let Some(x) = content {
+                    x.to_owned()
+                } else {
+                    dialoguer::Input::with_theme(&theme)
+                        .with_prompt("Your tasks name")
+                        .interact()
+                        .expect("failed to get task name from prompt")
+                })
+                .project(if let Some(x) = project {
+                    x.to_owned()
+                } else {
                     let selections = client
                         .project_list()
                         .await
@@ -56,36 +62,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .interact()
                         .unwrap();
 
-                    project_id = Some(selections.get(selected_project).unwrap().id.to_owned())
-                }
-
-                if content.is_none() {
-                    task_content = dialoguer::Input::with_theme(&theme)
-                        .with_prompt("Your tasks name")
-                        .interact()
-                        .unwrap();
+                    selections.get(selected_project).unwrap().id.to_owned()
+                })
+                .due(if let Some(x) = due {
+                    x.to_owned()
                 } else {
-                    task_content = content.to_owned().unwrap();
-                }
-
-                if due.is_none() {
-                    task_due = dialoguer::Input::with_theme(&theme)
+                    dialoguer::Input::with_theme(&theme)
                         .with_prompt("Due date")
                         .interact()
-                        .unwrap();
-                } else {
-                    task_due = due.to_owned().unwrap();
-                }
+                        .unwrap()
+                })
+                .to_owned();
 
-                match client
-                    .create(api::TaskCreate::new(
-                        task_content.to_owned(),
-                        task_due.to_owned(),
-                        Some(1),
-                        project_id,
-                    ))
-                    .await
-                {
+                match client.create(task_create).await {
                     Ok(task) => {
                         println!("{}", task.content)
                     }
