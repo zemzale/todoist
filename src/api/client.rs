@@ -22,12 +22,9 @@ impl Client {
     }
 
     pub async fn find(self, filter: Option<TaskFilter>) -> Result<Vec<Task>, Box<dyn Error>> {
-        let mut path: String = "https://api.todoist.com/rest/v2/tasks".to_string();
-        match filter {
-            Some(f) => {
-                path = path.add(&f.to_string());
-            }
-            None => (),
+        let mut path: String = "/tasks".to_string();
+        if let Some(f) = filter {
+            path = path.add(&f.to_string());
         }
 
         return self.get::<Vec<Task>>(path).await;

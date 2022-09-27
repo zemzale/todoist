@@ -29,7 +29,7 @@ pub struct Task {
     pub creator_id: String,
     #[serde(rename = "created_at")]
     pub created_at: String,
-    pub due: Due,
+    pub due: Option<Due>,
     pub url: String,
 }
 

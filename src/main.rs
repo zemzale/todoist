@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             TaskCommands::List { filter } => {
                 match client
                     .find(Some(api::TaskFilter {
-                        day_filter: filter.to_owned().unwrap_or(String::from("(today|overdue)")),
+                        day_filter: filter.to_owned().unwrap_or(String::from("today")),
                     }))
                     .await
                 {
@@ -95,7 +95,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let project = client.project_view(task.project_id).await.unwrap();
 
                     println!("Task : {}", Paint::green(task.content));
-                    println!("Due date : {}", Paint::red(task.due.date));
+                    if task.due.is_some() {
+                        println!("Due date : {}", Paint::red(task.due.unwrap().date));
+                    }
                     println!("Priority : {}", Paint::green(task.priority));
                     println!("Project : {}", Paint::green(project.name));
                     print!("Labels : ");
