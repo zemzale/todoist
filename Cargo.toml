@@ -15,6 +15,7 @@ figment = { version = "0.10", features = ["yaml", "env"] }
 dirs = "4.0"
 yansi = "0.5.1"
 dialoguer = { version = "0.10.2", features = ["fuzzy-select"]}
+comfy-table = "6.1.0"
 
 [[bin]]
 name = "todoist"

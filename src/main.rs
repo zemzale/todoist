@@ -3,6 +3,7 @@ mod config;
 
 use crate::config::setup_config;
 use clap::{Args, Parser, Subcommand};
+use comfy_table::{modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Table};
 use dialoguer::theme::ColorfulTheme;
 use yansi::Paint;
 
@@ -18,16 +19,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match &cli.command {
         Commands::Tasks(tasks) => match &tasks.command {
             TaskCommands::List { filter } => {
-                match client
+                let resp = client
                     .find(Some(api::TaskFilter {
                         day_filter: filter.to_owned().unwrap_or(String::from("today")),
                     }))
-                    .await
-                {
+                    .await;
+                match resp {
                     Ok(resp) => {
+                        let mut table = Table::new();
+                        table
+                            .set_header(vec!["ID", "Project", "Task name", "Priority"])
+                            .load_preset(UTF8_FULL)
+                            .apply_modifier(UTF8_ROUND_CORNERS);
+
                         for task in resp.iter() {
-                            println!("{} | {}", task.id, task.content)
+                            table.add_row(vec![
+                                &task.id,
+                                &client
+                                    .project_view(task.project_id.to_string())
+                                    .await
+                                    .unwrap()
+                                    .name,
+                                &task.content,
+                                &task.priority.to_string(),
+                            ]);
                         }
+
+                        println!("{table}");
                     }
                     Err(e) => {
                         println!("{}", e);
