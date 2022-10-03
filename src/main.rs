@@ -35,11 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         for task in resp.iter() {
                             table.add_row(vec![
                                 &task.id,
-                                &client
-                                    .project_view(task.project_id.to_string())
-                                    .await
-                                    .unwrap()
-                                    .name,
+                                &task.project(&client).await.unwrap().name,
                                 &task.content,
                                 &task.priority.to_string(),
                             ]);

@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::ops::Add;
+use std::{error::Error, ops::Add};
+
+use super::{Client, Project};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -31,6 +33,12 @@ pub struct Task {
     pub created_at: String,
     pub due: Option<Due>,
     pub url: String,
+}
+
+impl Task {
+    pub async fn project(&self, client: &Client) -> Result<Project, Box<dyn Error>> {
+        return client.project_view(self.project_id.to_string()).await;
+    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
