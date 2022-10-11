@@ -5,6 +5,8 @@ use crate::api::{Project, RequestFailed, Task, TaskCreate, TaskFilter};
 use std::error::Error;
 use std::ops::Add;
 
+use super::error::{self, ProjectNotFound};
+
 pub struct Client {
     pub http_client: reqwest::Client,
     bearer_token: (String, String),
@@ -73,6 +75,19 @@ impl Client {
     pub async fn project_list(&self) -> Result<Vec<Project>, Box<dyn Error>> {
         let path: String = "/projects".to_string();
         return self.get::<Vec<Project>>(path).await;
+    }
+
+    pub async fn project_find_by_name(&self, name: String) -> Result<Project, Box<dyn Error>> {
+        let path: String = "/projects".to_string();
+        let projects = self.get::<Vec<Project>>(path).await?;
+
+        for project in projects {
+            if project.name == name {
+                return Ok(project);
+            }
+        }
+
+        Err(Box::new(ProjectNotFound::new()))
     }
 
     async fn get<T: DeserializeOwned>(&self, sub_path: String) -> Result<T, Box<dyn Error>> {
