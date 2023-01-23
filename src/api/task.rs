@@ -70,6 +70,7 @@ pub struct TaskCreate {
     #[serde(rename = "due_string")]
     pub due_string: Option<String>,
     pub priority: Option<i32>,
+    #[serde(rename = "project_id")]
     pub project_id: Option<String>,
 }
 
