@@ -72,6 +72,7 @@ pub struct TaskCreate {
     pub priority: Option<i32>,
     #[serde(rename = "project_id")]
     pub project_id: Option<String>,
+    pub labels: Option<Vec<String>>,
 }
 
 impl TaskCreate {
@@ -81,6 +82,7 @@ impl TaskCreate {
             due_string: None,
             priority: None,
             project_id: None,
+            labels: None,
         };
     }
 
@@ -96,6 +98,11 @@ impl TaskCreate {
 
     pub fn project<'a>(&'a mut self, id: String) -> &'a mut TaskCreate {
         self.project_id = Some(id);
+        self
+    }
+
+    pub fn labels<'a>(&'a mut self, labels: Vec<String>) -> &'a mut TaskCreate {
+        self.labels = Some(labels);
         self
     }
 }

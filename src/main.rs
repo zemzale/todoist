@@ -52,6 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 content,
                 due,
                 project,
+                labels,
             } => {
                 let prompt = |prompt: &str| -> String {
                     dialoguer::Input::with_theme(&theme)
@@ -86,6 +87,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     x.to_owned()
                 } else {
                     prompt("Due date")
+                })
+                .labels(if labels.len() > 0 {
+                    labels.to_owned()
+                } else {
+                    let items = client.label_list().await?;
+
+                    let selected_labels = dialoguer::MultiSelect::new()
+                        .with_prompt("Lables:")
+                        .items(
+                            &items
+                                .iter()
+                                .map(|x| -> String { x.name.to_owned() })
+                                .collect::<Vec<String>>(),
+                        )
+                        .interact()
+                        .unwrap();
+
+                    let mut labels: Vec<String> = Vec::new();
+
+                    for i in selected_labels {
+                        labels.push(items[i].name.to_owned());
+                    }
+                    labels
                 })
                 .to_owned();
 
@@ -169,6 +193,8 @@ enum TaskCommands {
         due: Option<String>,
         // Tasks project
         project: Option<String>,
+        // Lables to add to task
+        labels: Vec<String>,
     },
     // Mark task as done
     Done {

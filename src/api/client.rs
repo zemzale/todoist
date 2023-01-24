@@ -1,11 +1,11 @@
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use crate::api::{Project, RequestFailed, Task, TaskCreate, TaskFilter};
+use crate::api::{Label, Project, RequestFailed, Task, TaskCreate, TaskFilter};
 use std::error::Error;
 use std::ops::Add;
 
-use super::error::{self, ProjectNotFound};
+use super::error::ProjectNotFound;
 
 pub struct Client {
     pub http_client: reqwest::Client,
@@ -88,6 +88,12 @@ impl Client {
         }
 
         Err(Box::new(ProjectNotFound::new()))
+    }
+
+    pub async fn label_list(&self) -> Result<Vec<Label>, Box<dyn Error>> {
+        let path = "/labels";
+
+        return self.get::<Vec<Label>>(path.to_owned()).await;
     }
 
     async fn get<T: DeserializeOwned>(&self, sub_path: String) -> Result<T, Box<dyn Error>> {
