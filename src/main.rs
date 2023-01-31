@@ -177,9 +177,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 },
             }
         } else {
-            use clap::CommandFactory;
-            let mut cmd = Cli::command();
-            cmd.print_help();
+            match Cli::command().print_help() {
+                Ok(_) => {}
+                Err(err) => eprintln!("{}", err),
+            }
         }
     }
 
