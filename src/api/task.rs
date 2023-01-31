@@ -46,7 +46,7 @@ impl Task {
 pub struct Due {
     pub date: String,
     pub string: String,
-    pub lang: String,
+    pub lang: Option<String>,
     #[serde(rename = "is_recurring")]
     pub is_recurring: bool,
 }
