@@ -187,6 +187,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             println!("{}", e);
                         }
                     },
+                    ProjectCommands::View { id } => match client.project_view(id.to_string()).await
+                    {
+                        Ok(project) => {
+                            println!("{} | {}", project.id, project.name);
+                        }
+                        Err(e) => println!("{}", e),
+                    },
                 },
             }
         } else {
@@ -255,6 +262,8 @@ struct Projects {
 enum ProjectCommands {
     // List command
     List {},
+    // View project
+    View { id: String },
 }
 
 #[derive(Parser, Debug)]
