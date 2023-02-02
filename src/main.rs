@@ -35,9 +35,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     TaskCommands::List { filter, raw } => {
                         let resp = client
                             .find(Some(api::TaskFilter {
-                                day_filter: filter
-                                    .to_owned()
-                                    .unwrap_or(String::from("today|overdue")),
+                                day_filter: Some(
+                                    filter.to_owned().unwrap_or(String::from("today|overdue")),
+                                ),
                             }))
                             .await;
                         match resp {

@@ -52,13 +52,15 @@ pub struct Due {
 }
 
 pub struct TaskFilter {
-    pub day_filter: String,
+    pub day_filter: Option<String>,
 }
 
 impl TaskFilter {
     pub fn to_string(self) -> String {
         let mut query: String = String::from("?filter=");
-        query = query.add(&self.day_filter.to_string());
+        if let Some(day_filter) = self.day_filter {
+            query = query.add(&day_filter.to_string());
+        }
         return query;
     }
 }
