@@ -32,13 +32,13 @@ impl Client {
         return self.get::<Vec<Task>>(path).await;
     }
 
-    pub async fn create(self, task: TaskCreate) -> Result<Task, Box<dyn Error>> {
+    pub async fn create(&self, task: TaskCreate) -> Result<Task, Box<dyn Error>> {
         return self
             .post::<TaskCreate, Task>(Some(task), String::from("/tasks"))
             .await;
     }
 
-    pub async fn close(self, id: String) -> Result<(), Box<dyn Error>> {
+    pub async fn close(&self, id: &String) -> Result<(), Box<dyn Error>> {
         let path = "https://api.todoist.com/rest/v2/tasks/"
             .to_string()
             .add(&id)
@@ -47,7 +47,10 @@ impl Client {
         let resp = self
             .http_client
             .post(path)
-            .header(self.bearer_token.0, self.bearer_token.1)
+            .header(
+                self.bearer_token.0.to_owned(),
+                self.bearer_token.1.to_owned(),
+            )
             .send()
             .await;
 

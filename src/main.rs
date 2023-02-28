@@ -1,13 +1,13 @@
 mod api;
+mod cmd;
 mod config;
 
 use std::io;
 
+use crate::cmd::Cmd;
 use crate::config::setup_config;
 use clap::{Args, Command, CommandFactory, Parser, Subcommand};
 use clap_complete::{generate, Generator, Shell};
-use comfy_table::{modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Table};
-use dialoguer::theme::ColorfulTheme;
 use yansi::Paint;
 
 extern crate dirs;
@@ -22,178 +22,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = api::Client::new(reqwest::Client::new(), config.api_key);
 
     let cli = Cli::parse();
-    let theme = ColorfulTheme::default();
 
     if let Some(generator) = cli.generator {
         let mut cmd = Cli::command();
         eprintln!("Generating completion file for {generator:?}...");
         print_completions(generator, &mut cmd);
     } else {
+        let cmd = Cmd::new(&client);
+
         if let Some(command) = cli.command {
             match command {
                 Commands::Tasks(tasks) => match &tasks.command {
-                    TaskCommands::List { filter, raw } => {
-                        let resp = client
-                            .find(Some(api::TaskFilter {
-                                day_filter: Some(
-                                    filter.to_owned().unwrap_or(String::from("today|overdue")),
-                                ),
-                            }))
-                            .await;
-                        match resp {
-                            Ok(resp) => {
-                                let mut output_rows: Vec<Vec<String>> = Vec::new();
-
-                                for task in resp.iter() {
-                                    let project_name = task.project(&client).await.unwrap().name;
-                                    output_rows.push(vec![
-                                        task.id.to_owned(),
-                                        project_name,
-                                        task.content.to_owned(),
-                                        task.priority.to_string(),
-                                    ]);
-                                }
-
-                                if raw.unwrap_or(false) {
-                                    for row in output_rows {
-                                        for field in row {
-                                            print!("{},", field);
-                                        }
-                                        println!();
-                                    }
-                                } else {
-                                    let mut table = Table::new();
-                                    table
-                                        .set_header(vec!["ID", "Project", "Task name", "Priority"])
-                                        .load_preset(UTF8_FULL)
-                                        .apply_modifier(UTF8_ROUND_CORNERS);
-
-                                    table.add_rows(output_rows);
-                                    println!("{table}");
-                                }
-                            }
-                            Err(e) => {
-                                println!("{}", e);
-                            }
-                        }
-                    }
+                    TaskCommands::List { filter, raw } => cmd.tasks.list(filter, raw).await,
                     TaskCommands::Create {
                         content,
                         due,
                         project,
                         labels,
-                    } => {
-                        let prompt = |prompt: &str| -> String {
-                            dialoguer::Input::with_theme(&theme)
-                                .with_prompt(prompt)
-                                .interact()
-                                .expect("failed to get input from promt")
-                        };
-
-                        let task_create = api::TaskCreate::new(if let Some(x) = content {
-                            x.to_owned()
-                        } else {
-                            prompt("Your tasks name")
-                        })
-                        .project(if let Some(x) = project {
-                            x.to_owned()
-                        } else {
-                            let selections = client
-                                .project_list()
-                                .await
-                                .expect("failed to fetch projects");
-
-                            let selected_project = dialoguer::FuzzySelect::with_theme(&theme)
-                                .with_prompt("Project:")
-                                .items(&selections)
-                                .default(0)
-                                .interact()
-                                .unwrap();
-
-                            selections.get(selected_project).unwrap().id.to_owned()
-                        })
-                        .due(if let Some(x) = due {
-                            x.to_owned()
-                        } else {
-                            prompt("Due date")
-                        })
-                        .labels(if labels.len() > 0 {
-                            labels.to_owned()
-                        } else {
-                            let items = client.label_list().await?;
-
-                            let selected_labels = dialoguer::MultiSelect::new()
-                                .with_prompt("Lables:")
-                                .items(
-                                    &items
-                                        .iter()
-                                        .map(|x| -> String { x.name.to_owned() })
-                                        .collect::<Vec<String>>(),
-                                )
-                                .interact()
-                                .unwrap();
-
-                            let mut labels: Vec<String> = Vec::new();
-
-                            for i in selected_labels {
-                                labels.push(items[i].name.to_owned());
-                            }
-                            labels
-                        })
-                        .to_owned();
-
-                        match client.create(task_create).await {
-                            Ok(task) => {
-                                println!("{}", task.content)
-                            }
-                            Err(e) => {
-                                println!("{}", e);
-                            }
-                        }
-                    }
-                    TaskCommands::Done { id } => match client.close(id.to_string()).await {
-                        Ok(_) => println!("task done"),
-                        Err(e) => {
-                            println!("{}", e);
-                        }
-                    },
-                    TaskCommands::View { id } => match client.view(id.to_string()).await {
-                        Ok(task) => {
-                            let project = client.project_view(task.project_id).await.unwrap();
-
-                            println!("Task : {}", Paint::green(task.content));
-                            if task.due.is_some() {
-                                println!("Due date : {}", Paint::red(task.due.unwrap().date));
-                            }
-                            println!("Priority : {}", Paint::green(task.priority));
-                            println!("Project : {}", Paint::green(project.name));
-                            print!("Labels : ");
-                            for lable in task.labels {
-                                print!("{} ", Paint::magenta(lable))
-                            }
-                            println!();
-                        }
-                        Err(e) => println!("Failed to view the task: {}", e),
-                    },
+                    } => cmd.tasks.create(content, due, project, labels).await,
+                    TaskCommands::Done { id } => cmd.tasks.done(id).await,
+                    TaskCommands::View { id } => cmd.tasks.view(id).await,
                 },
-                Commands::Projects(cmd) => match &cmd.command {
-                    ProjectCommands::List {} => match client.project_list().await {
-                        Ok(projects) => {
-                            for project in projects.iter() {
-                                println!("{} | {}", project.id, project.name)
-                            }
-                        }
-                        Err(e) => {
-                            println!("{}", e);
-                        }
-                    },
-                    ProjectCommands::View { id } => match client.project_view(id.to_string()).await
-                    {
-                        Ok(project) => {
-                            println!("{} | {}", project.id, project.name);
-                        }
-                        Err(e) => println!("{}", e),
-                    },
+                Commands::Projects(projects) => match &projects.command {
+                    ProjectCommands::List {} => cmd.projects.list().await,
+                    ProjectCommands::View { id } => cmd.projects.view(id).await,
                 },
             }
         } else {
