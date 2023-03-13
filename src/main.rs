@@ -39,7 +39,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         due,
                         project,
                         labels,
-                    } => cmd.tasks.create(content, due, project, labels).await,
+                        priority,
+                    } => {
+                        cmd.tasks
+                            .create(content, due, project, labels, priority)
+                            .await
+                    }
                     TaskCommands::Done { id } => cmd.tasks.done(id).await,
                     TaskCommands::View { id } => cmd.tasks.view(id).await,
                 },
@@ -76,30 +81,43 @@ struct Tasks {
 #[derive(Debug, Subcommand)]
 enum TaskCommands {
     // List commands, default to today and overdue
+    #[clap(about = "List tasks")]
     List {
+        /// Filter tasks using todoist query syntax
         #[clap(long, short)]
         filter: Option<String>,
+        /// If provided, outputs raw data
         #[clap(long, short)]
         raw: Option<bool>,
     },
     // Create a task
+    #[clap(about = "Create a task")]
     Create {
-        // Content of the task
+        /// Content of the task
         content: Option<String>,
-        // Tasks due date
+        /// Tasks due date
+        #[clap(long, short)]
         due: Option<String>,
-        // Tasks project
+        /// Tasks project
+        #[clap(long, short)]
         project: Option<String>,
-        // Lables to add to task
+        /// Lables to add to task
+        #[clap(long, short)]
         labels: Vec<String>,
+        /// Priority of the task
+        #[clap(long)]
+        priority: Option<u8>,
     },
     // Mark task as done
+    #[clap(about = "Mark task as done")]
     Done {
-        // ID of the task
+        /// ID of the task
         id: String,
     },
     // View task by id
+    #[clap(about = "View task by id")]
     View {
+        /// ID of the task
         id: String,
     },
 }

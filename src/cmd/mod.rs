@@ -74,6 +74,7 @@ impl Tasks<'_> {
         due: &Option<String>,
         project: &Option<String>,
         labels: &Vec<String>,
+        priority: &Option<u8>,
     ) {
         let theme = ColorfulTheme::default();
         let prompt = |prompt: &str| -> String {
@@ -133,6 +134,11 @@ impl Tasks<'_> {
                 labels.push(items[i].name.to_owned());
             }
             labels
+        })
+        .priority(if let Some(x) = priority {
+            x.to_owned()
+        } else {
+            prompt("Priority").parse().unwrap()
         })
         .to_owned();
 
