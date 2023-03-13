@@ -112,7 +112,7 @@ enum TaskCommands {
     #[clap(about = "Mark task as done")]
     Done {
         /// ID of the task
-        id: String,
+        id: Option<String>,
     },
     // View task by id
     #[clap(about = "View task by id")]

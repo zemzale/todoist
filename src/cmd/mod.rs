@@ -1,4 +1,4 @@
-use crate::api;
+use crate::api::{self, Task};
 
 use comfy_table::{modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Table};
 use dialoguer::theme::ColorfulTheme;
@@ -146,12 +146,40 @@ impl Tasks<'_> {
         println!("{}", new_task.content);
     }
 
-    pub async fn done(&self, id: &String) {
-        match self.client.close(id).await {
-            Ok(_) => println!("task done"),
-            Err(e) => {
-                println!("{}", e);
+    pub async fn done(&self, id: &Option<String>) {
+        if let Some(x) = id {
+            match self.client.close(x).await {
+                Ok(_) => println!("task done"),
+                Err(e) => {
+                    println!("{}", e);
+                }
             }
+        } else {
+            let theme = ColorfulTheme::default();
+            let selections = self
+                .client
+                .find(Some(api::TaskFilter {
+                    day_filter: Some(String::from("today")),
+                }))
+                .await
+                .expect("failed to fetch tasks");
+
+            let selected_task = dialoguer::FuzzySelect::with_theme(&theme)
+                .with_prompt("Task:")
+                .items(
+                    &selections
+                        .iter()
+                        .map(|x| -> String { x.content.to_owned() })
+                        .collect::<Vec<String>>(),
+                )
+                .default(0)
+                .interact()
+                .unwrap();
+
+            self.client
+                .close(&selections[selected_task].id)
+                .await
+                .unwrap();
         }
     }
 
