@@ -1,4 +1,4 @@
-use crate::api::{self, Task};
+use crate::api;
 
 use comfy_table::{modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Table};
 use dialoguer::theme::ColorfulTheme;

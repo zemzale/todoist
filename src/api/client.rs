@@ -5,8 +5,6 @@ use crate::api::{Label, Project, RequestFailed, Task, TaskCreate, TaskFilter};
 use std::error::Error;
 use std::ops::Add;
 
-use super::error::ProjectNotFound;
-
 pub struct Client {
     pub http_client: reqwest::Client,
     bearer_token: (String, String),
@@ -80,19 +78,6 @@ impl Client {
         return self.get::<Vec<Project>>(path).await;
     }
 
-    pub async fn project_find_by_name(&self, name: String) -> Result<Project, Box<dyn Error>> {
-        let path: String = "/projects".to_string();
-        let projects = self.get::<Vec<Project>>(path).await?;
-
-        for project in projects {
-            if project.name == name {
-                return Ok(project);
-            }
-        }
-
-        Err(Box::new(ProjectNotFound::new()))
-    }
-
     pub async fn label_list(&self) -> Result<Vec<Label>, Box<dyn Error>> {
         let path = "/labels";
 
@@ -100,7 +85,7 @@ impl Client {
     }
 
     async fn get<T: DeserializeOwned>(&self, sub_path: String) -> Result<T, Box<dyn Error>> {
-        let path: String = "https://api.todoist.com/rest/v2".to_string().add(&sub_path);
+        let path = "https://api.todoist.com/rest/v2".to_string().add(&sub_path);
 
         let resp = self
             .http_client

@@ -8,7 +8,6 @@ use crate::cmd::Cmd;
 use crate::config::setup_config;
 use clap::{Args, Command, CommandFactory, Parser, Subcommand};
 use clap_complete::{generate, Generator, Shell};
-use yansi::Paint;
 
 extern crate dirs;
 

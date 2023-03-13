@@ -108,27 +108,3 @@ impl TaskCreate {
         self
     }
 }
-
-impl Task {
-    pub fn new(content: String) -> Task {
-        return Task {
-            id: String::new(),
-            content,
-            assigner_id: todo!(),
-            assignee_id: todo!(),
-            project_id: todo!(),
-            section_id: todo!(),
-            parent_id: todo!(),
-            order: todo!(),
-            description: todo!(),
-            is_completed: todo!(),
-            labels: todo!(),
-            priority: todo!(),
-            comment_count: todo!(),
-            creator_id: todo!(),
-            created_at: todo!(),
-            due: todo!(),
-            url: todo!(),
-        };
-    }
-}

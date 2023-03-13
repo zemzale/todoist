@@ -19,20 +19,3 @@ impl fmt::Display for RequestFailed {
 }
 
 impl Error for RequestFailed {}
-
-#[derive(Debug, Clone)]
-pub struct ProjectNotFound {}
-
-impl ProjectNotFound {
-    pub fn new() -> ProjectNotFound {
-        ProjectNotFound {}
-    }
-}
-
-impl fmt::Display for ProjectNotFound {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "the project was not found")
-    }
-}
-
-impl Error for ProjectNotFound {}
